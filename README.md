@@ -7,7 +7,7 @@ export const azureKey = '<azure subscription key>';
 export const testKey = '<test subscription key>';
 ```
 
-Install node packages:
+Install node modules:
 ```bash
 npm install
 ```
