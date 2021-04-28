@@ -1,0 +1,54 @@
+{
+  "name": "azure-maps-playground",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@fluentui/react": "^8.12.0",
+    "@material-ui/core": "^4.7.1",
+    "@types/jest": "24.0.19",
+    "@types/node": "12.11.7",
+    "@types/qs": "^6.9.6",
+    "@types/react": "16.9.10",
+    "@types/react-dom": "16.9.2",
+    "@types/react-router-dom": "^5.1.3",
+    "axios": "^0.21.1",
+    "qs": "^6.10.1",
+    "react": "^16.10.2",
+    "react-azure-maps": "^0.3.0",
+    "react-dom": "^16.10.2",
+    "react-router-dom": "^5.1.2",
+    "react-scripts": "^3.4.4",
+    "typescript": "^3.9.7"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint --fix --ext .js,.jsx,.tsx"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.4.0",
+    "@typescript-eslint/parser": "^4.4.0",
+    "eslint-config-prettier": "^6.12.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-react": "^7.21.3",
+    "eslint-plugin-react-hooks": "^4.1.2",
+    "prettier": "^2.1.2"
+  }
+}
