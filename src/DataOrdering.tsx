@@ -85,13 +85,15 @@ async function populateOrderIds() {
   let api = "api-version=1.0";
   let sub = `subscription-key=${testKey}`;
   let args = [api, sub].join('&');
-  let url = `${base}?${args}`;
+  let url = `${base}?${args}`; 
   let result = await axios.get(url);
   let promises = [];
   for (let i = 0; i < result.data.values.length; i++) {
     let orderId = result.data.values[i];
-    let orderUrl = `${base}/${orderId}?${args}`
-    promises.push(await axios.get(orderUrl));
+    if (orderId) {
+      let orderUrl = `${base}/${orderId}?${args}`
+      promises.push(await axios.get(orderUrl));
+    }
   }
   let orderIds = await Promise.all(promises);
   return orderIds;
@@ -414,7 +416,6 @@ const DataOrderingApp: React.FC = () => {
     let base = `https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders/${orderId}/place`;
     let args = [api, sub].join('&');
     let url = `${base}?${args}`;
-    console.log(url);
     await axios.post(url).then(() => {refreshOrders() });    
   }
 
