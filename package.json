@@ -12,7 +12,6 @@
     "@types/react-dom": "16.9.2",
     "@types/react-router-dom": "^5.1.3",
     "axios": "^0.21.1",
-    "qs": "^6.10.1",
     "react": "^16.10.2",
     "react-azure-maps": "^0.3.0",
     "react-dom": "^16.10.2",
