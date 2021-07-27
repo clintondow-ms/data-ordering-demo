@@ -8,11 +8,13 @@ export const testKey = '<test subscription key>';
 ```
 
 Install node modules:
+
 ```bash
 npm install
 ```
 
 Start application:
+
 ```bash
 npm start
 ```

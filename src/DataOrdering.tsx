@@ -34,33 +34,15 @@ import {
   SelectionMode,
 } from '@fluentui/react';
 import {
-  azureKey,
-  testKey,
-} from './key';
-import {
   CreateDataOrderRequestBody,
   CreateDataOrderRequestGeoJSONFeature,
-  CreateDataOrderResponse,
   DataOrderResponse,
   GetDataOrderResponse,
   GetMarketplaceDataResponse,
   GetMarketplaceDataResponseGeoJSONFeature,
-  ListDataOrdersResponse,
-  PlaceDataOrderResponse,
 } from './model/models';
 
 initializeIcons();
-
-const option: IAzureMapOptions = {
-  authOptions: {
-    authType: AuthenticationType.subscriptionKey,
-    subscriptionKey: azureKey,
-  },
-  center: [-122.2796965774825, 47.59784152255815],
-  zoom: 10,
-  style: 'satellite',
-  view: 'Auto',
-};
 
 const controls: IAzureMapControls[] = [
   {
@@ -81,9 +63,9 @@ function renderLayer(layer: any): IAzureDataSourceChildren {
 }
 
 async function populateOrderIds() {
-  let base = 'https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders'
+  let base = 'https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders';
   let api = "api-version=1.0";
-  let sub = `subscription-key=${testKey}`;
+  let sub = `subscription-key=`;  // TODO needs fixing
   let args = [api, sub].join('&');
   let url = `${base}?${args}`; 
   let result = await axios.get(url);
@@ -101,6 +83,8 @@ async function populateOrderIds() {
 
 const DataOrderingApp: React.FC = () => {
   // State
+  const [mapKey, setMapKey] = useState('');
+
   const [layers, setLayers] = useState([] as IAzureMapFeature[]);
 
   const [orderId, setOrderId] = useState('');
@@ -352,7 +336,7 @@ const DataOrderingApp: React.FC = () => {
     if (orderId) {
       let base = `https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders/${orderId}`;
       let api = "api-version=1.0";
-      let sub = `subscription-key=${testKey}`;
+      let sub = `subscription-key=`;  // TODO Needs fixing
       let selection = searchItemSelection.getSelection();
       let s = selection[0] as any;
       let datasetId = `datasetId=${s.id}`;
@@ -406,13 +390,19 @@ const DataOrderingApp: React.FC = () => {
       ...searchParams,
       [target.id]: value
     });
-  }  
+  }
+
+  const handleMapKeyChange = (event: any) => {
+    let target = event.target;
+    let value = target.value;
+    setMapKey(value);
+  }
 
   const placeOrder = async () => {
     let selection = cartItemSelection.getSelection();
     let orderId = selection.map((item: any) => { return item.id })[0];
     let api = "api-version=1.0";
-    let sub = `subscription-key=${testKey}`;
+    let sub = `subscription-key=`;  // TODO Needs fixing
     let base = `https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders/${orderId}/place`;
     let args = [api, sub].join('&');
     let url = `${base}?${args}`;
@@ -423,7 +413,7 @@ const DataOrderingApp: React.FC = () => {
     let p = searchParams;
     let base = "https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery";
     let api = "api-version=1.0";
-    let sub = `subscription-key=${testKey}`;
+    let sub = `subscription-key=`;  // TODO Needs fixing
     let cc = `cloudCover=[${p.minCloudCover},${p.maxCloudCover}]`;
     let sc = `snowCover=[${p.minSnowCover},${p.maxSnowCover}]`;
     let ia = `incidenceAngle=[${p.minIncidenceAngle},${p.maxIncidenceAngle}]`;
@@ -459,6 +449,57 @@ const DataOrderingApp: React.FC = () => {
   const pivot = async () => {
     await refreshOrders();
     setLayers([] as IAzureMapFeature[]);
+  }
+
+  // This is really ugly code, needed to finish demo but please improve!
+  const renderMap = () => {
+    if (mapKey.length != 43) {  // 43 is length of typical subscription key
+      return (
+        <Stack>
+          <TextField
+            label="Enter Map Key"
+            id='mapKey'
+            value={mapKey}
+            onChange={handleMapKeyChange}
+          />
+        </Stack>
+      )
+    }
+    return (
+      <Stack>
+          <AzureMapsProvider>
+            <div style={{ height: '97vh', width: '76vw' }}>
+              <AzureMap
+                controls={controls}
+                options={{
+                  authOptions: {
+                    authType: AuthenticationType.subscriptionKey,
+                    subscriptionKey: mapKey,
+                  },
+                  center: [-122.2796965774825, 47.59784152255815],
+                  zoom: 10,
+                  style: 'satellite',
+                  view: 'Auto',
+                }}
+              >
+                <AzureMapDataSourceProvider
+                  id={'polygonExample AzureMapDataSourceProvider'}
+                  options={{}}>
+                  <AzureMapLayerProvider
+                    id={'polygonExample LayerProvider'}
+                    options={{
+                      fillOpacity: 0.5,
+                      fillColor: '#ff0000',
+                    }}
+                    type={'PolygonLayer'}
+                  />
+                  {layerRender()}
+                </AzureMapDataSourceProvider>
+              </AzureMap>
+            </div>
+          </AzureMapsProvider>
+        </Stack>
+    )
   }
 
   return (
@@ -682,30 +723,7 @@ const DataOrderingApp: React.FC = () => {
           </div>
         </PivotItem>
       </Pivot>
-      <Stack>
-        <AzureMapsProvider>
-          <div style={{ height: '97vh', width: '76vw' }}>
-            <AzureMap
-              controls={controls}
-              options={option}
-            >
-              <AzureMapDataSourceProvider
-                id={'polygonExample AzureMapDataSourceProvider'}
-                options={{}}>
-                <AzureMapLayerProvider
-                  id={'polygonExample LayerProvider'}
-                  options={{
-                    fillOpacity: 0.5,
-                    fillColor: '#ff0000',
-                  }}
-                  type={'PolygonLayer'}
-                />
-                {layerRender()}
-              </AzureMapDataSourceProvider>
-            </AzureMap>
-          </div>
-        </AzureMapsProvider>
-      </Stack>
+      {renderMap()}
     </Stack>
   );
 }

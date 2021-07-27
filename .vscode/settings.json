@@ -1,0 +1,4 @@
+{
+    "appService.deploySubpath": ".",
+    "appService.defaultWebAppToDeploy": "/subscriptions/06b266df-14aa-4ac5-af33-cb04707cc1ce/resourceGroups/myResourceGroup/providers/Microsoft.Web/sites/cdow-data-ordering"
+}

@@ -10,8 +10,6 @@
  * Do not edit the class manually.
  */
 import { GeoJSONFeatureBase } from './geoJSONFeatureBase';
-import { GeoJSONGeometryGA } from './geoJSONGeometryGA';
-
 
 /**
  * The marketplace product data in GeoJSON Feature format.
