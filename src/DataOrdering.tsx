@@ -62,34 +62,39 @@ function renderLayer(layer: any): IAzureDataSourceChildren {
   )
 }
 
-async function populateOrderIds() {
-  let base = 'https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders';
-  let api = "api-version=1.0";
-  let sub = `subscription-key=`;  // TODO needs fixing
-  let args = [api, sub].join('&');
-  let url = `${base}?${args}`; 
-  let result = await axios.get(url);
-  let promises = [];
-  for (let i = 0; i < result.data.values.length; i++) {
-    let orderId = result.data.values[i];
-    if (orderId) {
-      let orderUrl = `${base}/${orderId}?${args}`
-      promises.push(await axios.get(orderUrl));
+async function populateOrderIds(formKey: string) {
+  if (formKey.length > 0) {
+    let base = 'https://us.t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders';
+    let api = "api-version=1.0";
+    let sub = `subscription-key=${formKey}`;
+    let args = [api, sub].join('&');
+    let url = `${base}?${args}`; 
+    let result = await axios.get(url);
+    let promises = [];
+    for (let i = 0; i < result.data.values.length; i++) {
+      let orderId = result.data.values[i];
+      if (orderId) {
+        let orderUrl = `${base}/${orderId}?${args}`
+        promises.push(await axios.get(orderUrl));
+      }
     }
+    let orderIds = await Promise.all(promises);
+    return orderIds;
   }
-  let orderIds = await Promise.all(promises);
-  return orderIds;
+  return [];
 };
 
 const DataOrderingApp: React.FC = () => {
   // State
   const [mapKey, setMapKey] = useState('');
 
+  const [formKey, setFormKey] = useState('');
+
   const [layers, setLayers] = useState([] as IAzureMapFeature[]);
 
   const [orderId, setOrderId] = useState('');
 
-  const [orderIds, setOrderIds] = useState(populateOrderIds());
+  const [orderIds, setOrderIds] = useState(populateOrderIds(formKey));
 
   const [searchParams, setSearchParams] = useState({
     // TODO different default values?
@@ -334,9 +339,9 @@ const DataOrderingApp: React.FC = () => {
 
   const addToCart = async () => {
     if (orderId) {
-      let base = `https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders/${orderId}`;
+      let base = `https://us.t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders/${orderId}`;
       let api = "api-version=1.0";
-      let sub = `subscription-key=`;  // TODO Needs fixing
+      let sub = `subscription-key=${formKey}`;  // TODO Needs fixing
       let selection = searchItemSelection.getSelection();
       let s = selection[0] as any;
       let datasetId = `datasetId=${s.id}`;
@@ -352,7 +357,7 @@ const DataOrderingApp: React.FC = () => {
       };
       let result = await axios.put(url, body, { headers });
       setOrderId('');
-      setOrderIds(populateOrderIds());
+      setOrderIds(populateOrderIds(formKey));
     } else {
       alert("Order ID Required");
     }
@@ -398,12 +403,18 @@ const DataOrderingApp: React.FC = () => {
     setMapKey(value);
   }
 
+  const handleFormKeyChange = (event: any) => {
+    let target = event.target;
+    let value = target.value;
+    setFormKey(value);
+  }
+
   const placeOrder = async () => {
     let selection = cartItemSelection.getSelection();
     let orderId = selection.map((item: any) => { return item.id })[0];
     let api = "api-version=1.0";
-    let sub = `subscription-key=`;  // TODO Needs fixing
-    let base = `https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders/${orderId}/place`;
+    let sub = `subscription-key=${formKey}`;  // TODO Needs fixing
+    let base = `https://us.t-azmaps.azurelbs.com/data-ordering/catalogs/imagery/orders/${orderId}/place`;
     let args = [api, sub].join('&');
     let url = `${base}?${args}`;
     await axios.post(url).then(() => {refreshOrders() });    
@@ -411,9 +422,9 @@ const DataOrderingApp: React.FC = () => {
 
   const searchMarketplace = async () => {
     let p = searchParams;
-    let base = "https://t-azmaps.azurelbs.com/data-ordering/catalogs/imagery";
+    let base = "https://us.t-azmaps.azurelbs.com/data-ordering/catalogs/imagery";
     let api = "api-version=1.0";
-    let sub = `subscription-key=`;  // TODO Needs fixing
+    let sub = `subscription-key=${formKey}`;  // TODO Needs fixing
     let cc = `cloudCover=[${p.minCloudCover},${p.maxCloudCover}]`;
     let sc = `snowCover=[${p.minSnowCover},${p.maxSnowCover}]`;
     let ia = `incidenceAngle=[${p.minIncidenceAngle},${p.maxIncidenceAngle}]`;
@@ -430,7 +441,7 @@ const DataOrderingApp: React.FC = () => {
   }
 
   const refreshOrders = async () => {
-    setOrderIds(populateOrderIds());
+    setOrderIds(populateOrderIds(formKey));
     let orders = await orderIds;
     let notStarted = [];
     let started = [];
@@ -452,58 +463,23 @@ const DataOrderingApp: React.FC = () => {
   }
 
   // This is really ugly code, needed to finish demo but please improve!
-  const renderMap = () => {
-    if (mapKey.length != 43) {  // 43 is length of typical subscription key
+  // Added because both the form and map requires subscription keys
+  // Form is accessing API endpoints on the test server, Map is using a 
+  // Component which uses map control from production
+  const renderForm = () => {
+    if (formKey.length != 43) { // 43 is length of typical subscription key
       return (
         <Stack>
           <TextField
-            label="Enter Map Key"
-            id='mapKey'
-            value={mapKey}
-            onChange={handleMapKeyChange}
-          />
+            label="Enter Test Subscription Key"
+            id="formKey"
+            value={formKey}
+            onChange={handleFormKeyChange}
+            />
         </Stack>
       )
     }
     return (
-      <Stack>
-          <AzureMapsProvider>
-            <div style={{ height: '97vh', width: '76vw' }}>
-              <AzureMap
-                controls={controls}
-                options={{
-                  authOptions: {
-                    authType: AuthenticationType.subscriptionKey,
-                    subscriptionKey: mapKey,
-                  },
-                  center: [-122.2796965774825, 47.59784152255815],
-                  zoom: 10,
-                  style: 'satellite',
-                  view: 'Auto',
-                }}
-              >
-                <AzureMapDataSourceProvider
-                  id={'polygonExample AzureMapDataSourceProvider'}
-                  options={{}}>
-                  <AzureMapLayerProvider
-                    id={'polygonExample LayerProvider'}
-                    options={{
-                      fillOpacity: 0.5,
-                      fillColor: '#ff0000',
-                    }}
-                    type={'PolygonLayer'}
-                  />
-                  {layerRender()}
-                </AzureMapDataSourceProvider>
-              </AzureMap>
-            </div>
-          </AzureMapsProvider>
-        </Stack>
-    )
-  }
-
-  return (
-    <Stack horizontal>
       <Pivot
         styles={{
           root: {
@@ -723,6 +699,62 @@ const DataOrderingApp: React.FC = () => {
           </div>
         </PivotItem>
       </Pivot>
+    )
+  }
+
+  const renderMap = () => {
+    if (mapKey.length != 43) {  // 43 is length of typical subscription key
+      return (
+        <Stack>
+          <TextField
+            label="Enter Production Subscription Key"
+            id='mapKey'
+            value={mapKey}
+            onChange={handleMapKeyChange}
+          />
+        </Stack>
+      )
+    }
+    return (
+      <Stack>
+          <AzureMapsProvider>
+            <div style={{ height: '97vh', width: '76vw' }}>
+              <AzureMap
+                controls={controls}
+                options={{
+                  authOptions: {
+                    authType: AuthenticationType.subscriptionKey,
+                    subscriptionKey: mapKey,
+                  },
+                  center: [-122.2796965774825, 47.59784152255815],
+                  zoom: 10,
+                  style: 'satellite',
+                  view: 'Auto',
+                }}
+              >
+                <AzureMapDataSourceProvider
+                  id={'polygonExample AzureMapDataSourceProvider'}
+                  options={{}}>
+                  <AzureMapLayerProvider
+                    id={'polygonExample LayerProvider'}
+                    options={{
+                      fillOpacity: 0.5,
+                      fillColor: '#ff0000',
+                    }}
+                    type={'PolygonLayer'}
+                  />
+                  {layerRender()}
+                </AzureMapDataSourceProvider>
+              </AzureMap>
+            </div>
+          </AzureMapsProvider>
+        </Stack>
+    )
+  }
+
+  return (
+    <Stack horizontal>
+      {renderForm()}
       {renderMap()}
     </Stack>
   );
